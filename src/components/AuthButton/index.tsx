@@ -1,8 +1,7 @@
 'use client';
-import { walletAuth } from '@/auth/wallet';
-import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
-import { useMiniKit } from '@worldcoin/minikit-js/minikit-provider';
-import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@worldcoin/mini-apps-ui-kit-react';
+import { MiniKit, VerificationLevel } from '@worldcoin/minikit-js';
+import { useState } from 'react';
 
 /**
  * This component is an example of how to authenticate a user
@@ -10,59 +9,85 @@ import { useCallback, useEffect, useState } from 'react';
  * Read More: https://docs.world.org/mini-apps/commands/wallet-auth
  */
 export const AuthButton = () => {
-  const [isPending, setIsPending] = useState(false);
-  const { isInstalled } = useMiniKit();
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  const onClick = useCallback(async () => {
-    if (!isInstalled || isPending) {
+  const handleVerify = async (verificationLevel: VerificationLevel) => {
+    if (!MiniKit.isInstalled()) {
+      console.log('MiniKit is not installed');
       return;
     }
-    setIsPending(true);
+
+    setIsVerifying(true);
+
     try {
-      await walletAuth();
-    } catch (error) {
-      console.error('Wallet authentication button error', error);
-      setIsPending(false);
-      return;
-    }
+      const verifyPayload = {
+        action: 'test-action',
+        verification_level: verificationLevel,
+      };
 
-    setIsPending(false);
-  }, [isInstalled, isPending]);
+      const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
 
-  useEffect(() => {
-    const authenticate = async () => {
-      if (isInstalled && !isPending) {
-        setIsPending(true);
-        try {
-          await walletAuth();
-        } catch (error) {
-          console.error('Auto wallet authentication error', error);
-        } finally {
-          setIsPending(false);
-        }
+      if (finalPayload.status === 'error') {
+        console.error('Error payload', finalPayload);
+        return;
       }
-    };
 
-    authenticate();
-  }, [isInstalled, isPending]);
+      // Verify the proof in the backend
+      const verifyResponse = await fetch('/api/verify-proof', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payload: finalPayload,
+          action: 'test-action',
+        }),
+      });
+
+      const verifyResponseJson = await verifyResponse.json();
+      
+      if (verifyResponseJson.status === 200) {
+        console.log('Verification success!');
+      } else {
+        console.error('Verification failed:', verifyResponseJson);
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  if (!MiniKit.isInstalled()) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-sm text-gray-500">
+          Please open this app in the World App to verify your identity
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <LiveFeedback
-      label={{
-        failed: 'Failed to login',
-        pending: 'Logging in',
-        success: 'Logged in',
-      }}
-      state={isPending ? 'pending' : undefined}
-    >
+    <div className="grid w-full gap-4">
       <Button
-        onClick={onClick}
-        disabled={isPending}
+        onClick={() => handleVerify(VerificationLevel.Device)}
+        disabled={isVerifying}
+        size="lg"
+        variant="tertiary"
+        className="w-full"
+      >
+        {isVerifying ? 'Verifying...' : 'Verify with Device'}
+      </Button>
+      <Button
+        onClick={() => handleVerify(VerificationLevel.Orb)}
+        disabled={isVerifying}
         size="lg"
         variant="primary"
+        className="w-full"
       >
-        Login with Wallet
+        {isVerifying ? 'Verifying...' : 'Verify with Orb'}
       </Button>
-    </LiveFeedback>
+    </div>
   );
 };

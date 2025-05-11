@@ -1,6 +1,6 @@
 'use client';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
-import { MiniKit, VerificationLevel } from '@worldcoin/minikit-js';
+import { MiniKit, VerificationLevel, ISuccessResult } from '@worldcoin/minikit-js';
 import { useState } from 'react';
 
 /**
@@ -18,36 +18,59 @@ export const Verify = () => {
     VerificationLevel.Device,
   );
 
-  const onClickVerify = async (verificationLevel: VerificationLevel) => {
+  const handleVerify = async (verificationLevel: VerificationLevel) => {
+    if (!MiniKit.isInstalled()) {
+      console.log('MiniKit is not installed');
+      return;
+    }
+
     setButtonState('pending');
     setWhichVerification(verificationLevel);
-    const result = await MiniKit.commandsAsync.verify({
-      action: 'test-action', // Make sure to create this in the developer portal -> incognito actions
-      verification_level: verificationLevel,
-    });
-    console.log(result.finalPayload);
-    // Verify the proof
-    const response = await fetch('/api/verify-proof', {
-      method: 'POST',
-      body: JSON.stringify({
-        payload: result.finalPayload,
-        action: 'test-action',
-      }),
-    });
 
-    const data = await response.json();
-    if (data.verifyRes.success) {
-      setButtonState('success');
-      // Normally you'd do something here since the user is verified
-      // Here we'll just do nothing
-    } else {
+    try {
+      const verifyPayload = {
+        action: 'test-action', // Make sure this matches your action ID from the Developer Portal
+        verification_level: verificationLevel,
+      };
+
+      const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
+
+      if (finalPayload.status === 'error') {
+        console.error('Error payload', finalPayload);
+        setButtonState('failed');
+        return;
+      }
+
+      // Verify the proof in the backend
+      const verifyResponse = await fetch('/api/verify-proof', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payload: finalPayload as ISuccessResult,
+          action: 'test-action',
+        }),
+      });
+
+      const verifyResponseJson = await verifyResponse.json();
+      
+      if (verifyResponseJson.status === 200) {
+        console.log('Verification success!');
+        setButtonState('success');
+      } else {
+        console.error('Verification failed:', verifyResponseJson);
+        setButtonState('failed');
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
       setButtonState('failed');
-
-      // Reset the button state after 3 seconds
-      setTimeout(() => {
-        setButtonState(undefined);
-      }, 2000);
     }
+
+    // Reset the button state after 3 seconds
+    setTimeout(() => {
+      setButtonState(undefined);
+    }, 3000);
   };
 
   return (
@@ -67,7 +90,7 @@ export const Verify = () => {
         className="w-full"
       >
         <Button
-          onClick={() => onClickVerify(VerificationLevel.Device)}
+          onClick={() => handleVerify(VerificationLevel.Device)}
           disabled={buttonState === 'pending'}
           size="lg"
           variant="tertiary"
@@ -88,7 +111,7 @@ export const Verify = () => {
         className="w-full"
       >
         <Button
-          onClick={() => onClickVerify(VerificationLevel.Orb)}
+          onClick={() => handleVerify(VerificationLevel.Orb)}
           disabled={buttonState === 'pending'}
           size="lg"
           variant="primary"

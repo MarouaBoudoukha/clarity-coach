@@ -18,22 +18,31 @@ export const ViewPermissions = () => {
     const fetchPermissions = async () => {
       if (isInstalled) {
         try {
-          // You can also fetch this by grabbing from user
-          // MiniKit.user.permissions
           const permissions = await MiniKit.commandsAsync.getPermissions();
           if (permissions?.finalPayload.status === 'success') {
             setPermissions(permissions?.finalPayload.permissions || {});
             console.log('permissions', permissions);
           }
         } catch (error) {
-          console.error('Failed to fetch permissions:', error);
+          console.log('Running in browser mode - Permissions unavailable');
         }
       } else {
-        console.log('MiniKit is not installed');
+        console.log('MiniKit is not installed - Running in browser mode');
       }
     };
     fetchPermissions();
   }, [isInstalled]);
+
+  if (!isInstalled) {
+    return (
+      <div className="grid w-full gap-4">
+        <p className="text-lg font-semibold">Permissions</p>
+        <p className="text-sm text-gray-500">
+          Permissions are only available when running inside World App
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid w-full gap-4">
