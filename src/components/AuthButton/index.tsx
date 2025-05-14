@@ -29,8 +29,8 @@ export const AuthButton = () => {
 
       if (finalPayload.status === 'error') {
         console.error('Error payload', finalPayload);
-        return;
-      }
+      return;
+    }
 
       // Verify the proof in the backend
       const verifyResponse = await fetch('/api/verify-proof', {
@@ -51,12 +51,12 @@ export const AuthButton = () => {
       } else {
         console.error('Verification failed:', verifyResponseJson);
       }
-    } catch (error) {
+        } catch (error) {
       console.error('Verification error:', error);
-    } finally {
+        } finally {
       setIsVerifying(false);
-    }
-  };
+      }
+    };
 
   if (!MiniKit.isInstalled()) {
     return (

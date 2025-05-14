@@ -61,9 +61,9 @@ export const EmailVerification = () => {
       }
 
       setSuccess('Email verified successfully!');
-      // Redirect to dashboard or home page after successful verification
+      // Redirect to device verification page after successful email verification
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        window.location.href = '/verify/device';
       }, 2000);
     } catch (error) {
       console.error('Email verification error:', error);

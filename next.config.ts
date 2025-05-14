@@ -1,9 +1,17 @@
-import type { NextConfig } from 'next';
+import { NextConfig } from 'next';
 
 const config: NextConfig = {
   reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
   experimental: {
-    serverExternalPackages: ['@worldcoin/minikit-js', '@auth/core']
+    allowedDevOrigins: ['*.ngrok-free.app'],
   },
   async headers() {
     return [
@@ -30,10 +38,6 @@ const config: NextConfig = {
       }
     ];
   },
-  images: {
-    domains: ['*.ngrok-free.app', 'localhost'],
-  },
-  allowedDevOrigins: ['https://5d6e-2a04-cec0-c00b-470b-68b2-f599-7761-23a8.ngrok-free.app']
 };
 
 export default config;

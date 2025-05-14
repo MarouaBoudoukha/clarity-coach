@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { SignJWT } from 'jose';
-import { cookies } from 'next/headers';
+import { signIn } from '@/lib/auth';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,8 +40,8 @@ export async function POST(req: NextRequest) {
     });
 
     // Send verification email
-    const { data, error } = await resend.emails.send({
-      from: 'Clarity Coach <onboarding@resend.dev>',
+    const { error } = await resend.emails.send({
+      from: 'onboarding@resend.dev',
       to: email,
       subject: 'Verify your email',
       html: `
@@ -102,25 +100,29 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // Generate JWT token
-    const token = await new SignJWT({ email })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('24h')
-      .sign(JWT_SECRET);
+    // Sign in with NextAuth.js
+    const result = await signIn('email', {
+      email,
+      redirect: false,
+      callbackUrl: '/verify/device',
+    });
 
-    // Create response with cookies
-    const response = NextResponse.json({ message: 'Email verified successfully' });
+    if (!result?.ok) {
+      console.error('Failed to sign in with NextAuth.js:', result?.error);
+      return NextResponse.json(
+        { error: 'Failed to sign in' },
+        { status: 500 }
+      );
+    }
+
+    // Create response
+    const response = NextResponse.json({ 
+      message: 'Email verified successfully',
+      redirect: '/verify/device'
+    });
     
     // Clear the verification code cookie
     response.cookies.delete('verification_code');
-
-    // Set the auth token cookie
-    response.cookies.set('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60, // 24 hours
-    });
 
     console.log('Email verified successfully for:', email);
     return response;

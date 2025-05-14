@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google';
 import '@worldcoin/mini-apps-ui-kit-react/styles.css';
 import './globals.css';
 import ClientLayout from './ClientLayout';
+import { SessionProvider } from 'next-auth/react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClientLayout>{children}</ClientLayout>
+        <SessionProvider>
+          <ClientLayout>{children}</ClientLayout>
+        </SessionProvider>
       </body>
     </html>
   );

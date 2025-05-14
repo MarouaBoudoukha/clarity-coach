@@ -30,7 +30,7 @@ export const Verify = () => {
     try {
       const verifyPayload = {
         action: 'test-action', // Make sure this matches your action ID from the Developer Portal
-        verification_level: verificationLevel,
+      verification_level: verificationLevel,
       };
 
       const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
@@ -43,22 +43,22 @@ export const Verify = () => {
 
       // Verify the proof in the backend
       const verifyResponse = await fetch('/api/verify-proof', {
-        method: 'POST',
+      method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+      body: JSON.stringify({
           payload: finalPayload as ISuccessResult,
-          action: 'test-action',
-        }),
-      });
+        action: 'test-action',
+      }),
+    });
 
       const verifyResponseJson = await verifyResponse.json();
       
       if (verifyResponseJson.status === 200) {
         console.log('Verification success!');
-        setButtonState('success');
-      } else {
+      setButtonState('success');
+    } else {
         console.error('Verification failed:', verifyResponseJson);
         setButtonState('failed');
       }
@@ -67,9 +67,9 @@ export const Verify = () => {
       setButtonState('failed');
     }
 
-    // Reset the button state after 3 seconds
-    setTimeout(() => {
-      setButtonState(undefined);
+      // Reset the button state after 3 seconds
+      setTimeout(() => {
+        setButtonState(undefined);
     }, 3000);
   };
 
