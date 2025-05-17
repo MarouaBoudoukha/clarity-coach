@@ -1,12 +1,14 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node",
-      "config": {
-        "packageManager": "npm"
-      }
-    }
-  ]
+    "version": 2,
+    "framework": "nextjs",
+
+    "builds": [
+        {
+        "src": "package.json",
+        "use": "@vercel/node",
+        "config": {
+            "packageManager": "npm"
+        }
+        }
+    ]
 }
